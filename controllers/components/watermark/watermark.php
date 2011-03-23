@@ -1,7 +1,7 @@
 <?php
 /**
  * @author Òscar Casajuana Alonso <elboletaire@underave.net>
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation; either version 2.1 of the License, or
@@ -17,31 +17,31 @@
  */
 class WatermarkComponent extends Object
 {
-	
+
 	var $file;
 
 	/**
-	 * Sizes especified by user to enlarge or 
+	 * Sizes especified by user to enlarge or
 	 * reduce watermark and / or final image
 	 * @var
 	 */
 	public $size;
-	
+
 	public $errors;
-	
+
 	private $image;
-	
+
 	private $watermark = FALSE;
-	
+
 	private $output;
 
 	private $quality = 80;
 	/**
-	 * Sizes of image files 
+	 * Sizes of image files
 	 * @private array $sizes
 	 */
 	private $sizes;
-	
+
 	/**
 	 * Resize values
 	 * @private array $resize
@@ -52,24 +52,24 @@ class WatermarkComponent extends Object
 	 * @private array $margin
 	 */
 	private $margin = array('x' => 0, 'y' => 0);
-	
+
 	/**
 	 * Watermark position
 	 * @private string $position
 	 */
 	private $position = "bottom right";
-	
+
 	private $rotate = FALSE;
-	
+
 	/**
-	 * Apply Watermark after or before rotate? 
+	 * Apply Watermark after or before rotate?
 	 **/
 	private $awaobr;
 	private $riaobr;
-	
-	
+
+
 	private $mime;
-	
+
 	/**
 	 * Set image options
 	 * @param array $options [optional]
@@ -83,18 +83,18 @@ class WatermarkComponent extends Object
 				$this->file['image'] = $file;
 			}
 			else return $this->error('Watermark::setImage: File "' . $file . '" does not exist');
-			
+
 			// Obtain MIME type
 			$this->mime['image'] = $this->getMime($this->file['image']);
 			// Obtain file sizes
 			$this->getSizes();
-			
+
 			if (!$this->image = $this->createFrom($this->file['image']))
 			{
 				return $this->error('Watermark::setImage: could not create image from file ' . $this->file['image']);
 			}
 			if($this->mime['image'] == 'image/png' || $this->mime['image'] == 'image/gif')
-			{	
+			{
 				if (!imagealphablending($this->image, TRUE))
 				{
 					return $this->error('Watermark::setImage: failed applying imagealphablending to image');
@@ -114,11 +114,11 @@ class WatermarkComponent extends Object
 			}
 		}
 	}
-	
+
 	/**
 	 * Set watermark options
 	 * @param array $options [optional]
-	 * @return 
+	 * @return
 	 */
 	public function setWatermark($options = array())
 	{
@@ -159,14 +159,14 @@ class WatermarkComponent extends Object
 						{
 							if ($key === 0)
 								$this->margin['x'] = $margin;
-							elseif ($key === 1) 
+							elseif ($key === 1)
 								$this->margin['y'] = $margin;
 							else
 								$this->margin[$key] = $margin;
 						}
 					}
 				}
-				
+
 				// Watermark size
 				if (isset($options['size']) && !empty($options['size']))
 				{
@@ -177,7 +177,7 @@ class WatermarkComponent extends Object
 					$this->size['watermark'] = '100%';
 				}
 			}
-			
+
 			if(!file_exists($this->file['watermark']))
 			{
 				return $this->error('Watermark::setWatermark: specified file does not exist');
@@ -185,13 +185,13 @@ class WatermarkComponent extends Object
 			$this->getSizes();
 		}
 	}
-	
+
 	public function resize($options = array())
 	{
 		if(isset($options['type']) && !empty($options['type']))
 		{
 			$this->resize['type'] = $options['type'];
-			
+
 			if(!preg_match('/resize(min|crop)?|crop/', $this->resize['type']))
 			{
 				return $this->error('Watermark::resize: specified resize type "'.$this->resize['type'].'" does not exist');
@@ -263,7 +263,7 @@ class WatermarkComponent extends Object
 						$newX = $this->sizes['image']['width'];
 						$newY = $this->sizes['image']['height'];
 					}
-					
+
 					if (!$dstImg = imagecreatetruecolor($newX, $newY))
 					{
 						return $this->error('Watermark::generate: could not create tempfile image while in \'resize\'');
@@ -279,7 +279,7 @@ class WatermarkComponent extends Object
 				 * Maintains aspect ratio but resizes the image so that once
 				 * one side meets its max width or max height condition, it stays at that size
 				 * (thus one side will be larger)
-				 */	
+				 */
 				case 'resizemin':
 					$ratioX = $this->resize['size']['x'] / $this->sizes['image']['width'];
 					$ratioY = $this->resize['size']['y'] / $this->sizes['image']['height'];
@@ -296,7 +296,7 @@ class WatermarkComponent extends Object
 					}
 					else
 					{
-						$newX = ceil($ratioY * $this->sizes['image']['width']);		
+						$newX = ceil($ratioY * $this->sizes['image']['width']);
 						$newY = $this->resize['size']['y'];
 					}
 
@@ -319,22 +319,22 @@ class WatermarkComponent extends Object
 					$ratioY = $this->resize['size']['y'] / $this->sizes['image']['height'];
 
 					if ($ratioX < $ratioY)
-					{ 
+					{
 						$newX = round(($this->sizes['image']['width'] - ($this->resize['size']['x'] / $ratioY))/2);
 						$newY = 0;
 						$this->sizes['image']['width'] = round($this->resize['size']['x'] / $ratioY);
 						$this->sizes['image']['height'] = $this->sizes['image']['height'];
 					}
 					else
-					{ 
+					{
 						$newX = 0;
 						$newY = round(($this->sizes['image']['height'] - ($this->resize['size']['y'] / $ratioX))/2);
 						$this->sizes['image']['height'] = round($this->resize['size']['y'] / $ratioX);
 					}
-					
+
 					if (!$dstImg = imagecreatetruecolor($this->resize['size']['x'], $this->resize['size']['y']))
 					{
-						return $this->error('Watermark::generate: could not create tempfile image while in \'resizecrop\'');	
+						return $this->error('Watermark::generate: could not create tempfile image while in \'resizecrop\'');
 					}
 					if (!imagecopyresampled($dstImg, $this->image, 0, 0, $newX, $newY, $this->resize['size']['x'], $this->resize['size']['y'], $this->sizes['image']['width'], $this->sizes['image']['height']))
 					{
@@ -343,7 +343,7 @@ class WatermarkComponent extends Object
 					$this->sizes['image']['width'] = $this->resize['size']['x'];
 					$this->sizes['image']['height'] = $this->resize['size']['y'];
 					break;
-				
+
 				/**
 				 * a straight centered crop
 				 */
@@ -374,8 +374,8 @@ class WatermarkComponent extends Object
 			$this->image = $dstImg;
 		}
 	}
-	
-	
+
+
 	public function rotateImage($options = array())
 	{
 		if (isset($options) && !empty($options))
@@ -404,7 +404,7 @@ class WatermarkComponent extends Object
 		$this->sizes['image']['width'] = imagesx($this->image);
 		$this->sizes['image']['height'] = imagesy($this->image);
 	}
-	
+
 	public function applyWatermark()
 	{
 		$this->getWatermarkPosition();
@@ -412,7 +412,7 @@ class WatermarkComponent extends Object
 		{
 			return $this->error('Watermark::generate: could not create watermark image');
 		}
-		
+
 		if(isset($this->size) && !empty($this->size))
 		{
 			if (!$this->watermark = $this->resize_png_image($this->watermark, $this->sizes['watermark']['width'], $this->sizes['watermark']['width']))
@@ -428,7 +428,7 @@ class WatermarkComponent extends Object
 
 	public function generate($path = NULL, $output = NULL)
 	{
-		
+
 		if (!empty($output))
 		{
 			$this->output = $output;
@@ -497,21 +497,39 @@ class WatermarkComponent extends Object
 		}
 		return $create;
 	}
-	
+
 	private function getMime($file)
 	{
-		$mimetype = mime_content_type($file);
-		if($mimetype == 'text/plain')
-		{
-			$f = escapeshellarg($file);
-			$mimetype = trim(`file -bi $f`);
-		}
-		return $mimetype;
+            $mimetype = null;
+            if (function_exists('finfo_file'))
+            {
+                $finfo = finfo_open(FILEINFO_MYME_TYPE);
+                $mimetype = finfo_file($finfo, $file);
+                finfo_close($finfo);
+            }
+            elseif (function_exists('mime_content_type'))
+            {
+                $mimetype = mime_content_type($file);
+            }
+            else
+            {
+                App::import('Vendor', 'mimetype');
+                $mime = new mimetype();
+                $mimetype = $mime->getType($file);
+            }
+
+            if($mimetype == 'text/plain')
+            {
+                    $f = escapeshellarg($file);
+                    $mimetype = trim(`file -bi $f`);
+            }
+
+            return $mimetype;
 	}
 
 	/**
 	 * Obtains image sizes
-	 * @return 
+	 * @return
 	 */
 	private function getSizes()
 	{
@@ -520,12 +538,12 @@ class WatermarkComponent extends Object
 			list($width, $height, $format) = getimagesize($this->file['image']);
 			$this->sizes['image'] = compact('width','height','format');
 		}
-		
+
 		if (!empty($this->file['watermark']))
 		{
 			list($width, $height, $format) = getimagesize($this->file['watermark']);
 			$this->sizes['watermark'] = compact('width','height','format');
-			
+
 			if(isset($this->size['watermark']) && !empty($this->size['watermark']))
 			{
 				// Size in percentage
@@ -533,7 +551,7 @@ class WatermarkComponent extends Object
 				{
 					$size = $this->size['watermark'] / 100;
 					$this->sizes['watermark']['width'] = $this->sizes['watermark']['width'] * $size;
-					$this->sizes['watermark']['height'] = $this->sizes['watermark']['height'] * $size; 
+					$this->sizes['watermark']['height'] = $this->sizes['watermark']['height'] * $size;
 				}
 				elseif ($this->size['watermark'] === 'full')
 				{
@@ -541,7 +559,7 @@ class WatermarkComponent extends Object
 					$waterMarkHeight = $waterMarkDestHeight = $this->sizes['watermark']['height'];
 					$origHeight = $this->sizes['image']['height'];
 					$origWidth = $this->sizes['image']['width'];
-					
+
 					if($waterMarkWidth > $origWidth*1.05 && $waterMarkHeight > $origHeight*1.05)
 					{
 						// both are already larger than the original by at least 5%...
@@ -549,7 +567,7 @@ class WatermarkComponent extends Object
 						// where is the largest difference?
 						$wdiff = $waterMarkDestWidth - $origWidth;
 						$hdiff = $waterMarkDestHeight - $origHeight;
-						
+
 						if($wdiff > $hdiff)
 						{
 							// the width has the largest difference - get percentage
@@ -565,11 +583,11 @@ class WatermarkComponent extends Object
 					else
 					{
 						// the watermark will need to be enlarged for this one
-						
+
 						// where is the largest difference?
 						$wdiff = $origWidth - $waterMarkDestWidth;
 						$hdiff = $origHeight - $waterMarkDestHeight;
-						
+
 						if($wdiff > $hdiff)
 						{
 							// the width has the largest difference - get percentage
@@ -591,7 +609,7 @@ class WatermarkComponent extends Object
 
 	/**
 	 * Calculates the position using the 'position' and 'margin' vars
-	 * @return 
+	 * @return
 	 */
 	private function getWatermarkPosition()
 	{
@@ -602,7 +620,7 @@ class WatermarkComponent extends Object
 		{
 			$position = 'center center';
 		}
-		
+
 		// Horizontal
 		if (preg_match('/right/', $position))
 		{
@@ -616,7 +634,7 @@ class WatermarkComponent extends Object
 		{
 			$x = $this->sizes['image']['width'] / 2 - $this->sizes['watermark']['width'] / 2  + $this->margin['x'];
 		}
-		
+
 		// Vertical
 		if (preg_match('/bottom/', $position))
 		{
@@ -632,7 +650,7 @@ class WatermarkComponent extends Object
 		}
 		$this->position = array('x' => $x,'y' => $y,'string' => $position);
 	}
-	
+
 	private function resize_png_image($srcImage, $width, $height){
 		// Get sizes
 		if (!$srcWidth = imagesx($srcImage))
@@ -643,12 +661,12 @@ class WatermarkComponent extends Object
 		{
 			return $this->error('Watermark::resize_png_image: could not get image height');
 		}
-		
+
 		// Get percentage and destiny size
 		$percentage = (double)$width / $srcWidth;
 		$destHeight = round($srcHeight * $percentage) + 1;
 		$destWidth = round($srcWidth * $percentage) + 1;
-		
+
 		if($destHeight > $height)
 		{
 		    // if the width produces a height bigger than we want, calculate based on height
@@ -656,7 +674,7 @@ class WatermarkComponent extends Object
 		    $destHeight = round($srcHeight * $percentage) + 1;
 		    $destWidth = round($srcWidth * $percentage) + 1;
 		}
-		
+
 		if (!$destImage = imagecreatetruecolor($destWidth-1, $destHeight-1))
 		{
 			return $this->error('Watermark::resize_png_image: imagecreatetruecolor could not create the image');
@@ -679,7 +697,7 @@ class WatermarkComponent extends Object
 		}
 		return $destImage;
 	}
-	
+
 	private function error($type, $text)
 	{
 		if(!is_array($this->errors)) $this->errors = array();
