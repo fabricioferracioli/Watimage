@@ -503,9 +503,16 @@ class WatermarkComponent extends Object
             $mimetype = null;
             if (function_exists('finfo_file'))
             {
-                $finfo = finfo_open(FILEINFO_MYME_TYPE);
+                $finfo = finfo_open(FILEINFO_MIME_TYPE);
                 $mimetype = finfo_file($finfo, $file);
                 finfo_close($finfo);
+
+                if (is_bool($mimetype))
+                {
+                    App::import('Vendor', 'mimetype');
+                    $mime = new mimetype();
+                    $mimetype = $mime->getType($file);
+                }
             }
             elseif (function_exists('mime_content_type'))
             {
